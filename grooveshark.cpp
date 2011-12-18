@@ -11,6 +11,7 @@
 Grooveshark::Grooveshark(QObject *parent) : QObject(parent)
 {
     this->manager = new QNetworkAccessManager(this);
+    this->searchResults = NULL;
 }
 
 Grooveshark::~Grooveshark() {
@@ -64,7 +65,9 @@ void Grooveshark::getSessionId() {
     eventLoop.exec();
 }
 
-void Grooveshark::search(QString queryStr) {
+QList<SongInfo*>* Grooveshark::search(QString queryStr) {
+    QEventLoop eventLoop;
+
     // Create the paramaters object with our search parameters.
     QVariantMap parameters;
     parameters.insert("guts", 0);
@@ -87,6 +90,12 @@ void Grooveshark::search(QString queryStr) {
     // Set the reply signals.
     this->searchReply = this->manager->post(request, json);
     connect(this->searchReply, SIGNAL(finished()), this, SLOT(searchFinished()));
+
+    // Wait the request to finish first.
+    connect(this->searchReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+    eventLoop.exec();
+
+    return this->searchResults;
 }
 
 // ----------------------------------------
@@ -136,8 +145,46 @@ void Grooveshark::getSessionFinished() {
 }
 
 void Grooveshark::searchFinished() {
-    QByteArray responseBytes = searchReply->readAll();
+    bool parseOk = true;
 
-    qDebug() << "Search finished.";
-    qDebug() << QString(responseBytes);
+    // Delete the old list.
+    if (this->searchResults != NULL) {
+        foreach (SongInfo *songInfo, this->searchResults->toStdList()) {
+            delete songInfo;
+        }
+
+        delete this->searchResults;
+    }
+
+    this->searchResults = new QList<SongInfo*>();
+
+    // Check for errors.
+    if (searchReply->error() == QNetworkReply::NoError) {
+        // Read data.
+        QByteArray responseBytes = this->searchReply->readAll();
+
+        // Parse the data to a map.
+        QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
+
+        // If everything went fine, let's save the result. Otherwise, errors.
+        if (parseOk) {
+            foreach (QVariant song, responseData["result"].toMap()["result"].toList()) {
+                SongInfo *songInfo = new SongInfo();
+
+                songInfo->id = song.toMap()["SongID"].toString();
+                songInfo->artist = song.toMap()["ArtistName"].toString();
+                songInfo->title = song.toMap()["SongName"].toString();
+                songInfo->album = song.toMap()["AlbumName"].toString();
+                songInfo->track = song.toMap()["TrackNum"].toString();
+
+                this->searchResults->append(songInfo);
+            }
+        } else {
+            qDebug() << "searchFinished() failed: !parseOk";
+            qDebug() << "responseBytes as string: " << QString(responseBytes);
+        }
+    } else {
+        qDebug() << "searchFinished() failed: reply has errors.";
+        qDebug() << "errorString():" << authenticateReply->errorString();
+    }
 }

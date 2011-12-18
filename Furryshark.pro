@@ -16,13 +16,15 @@ SOURCES += main.cpp\
     grooveshark.cpp \
     request.cpp \
     global.cpp \
-    util.cpp
+    util.cpp \
+    songinfo.cpp
 
 HEADERS  += mainwindow.h \
     grooveshark.h \
     request.h \
     global.h \
-    util.h
+    util.h \
+    songinfo.h
 
 LIBS += -lqjson
 

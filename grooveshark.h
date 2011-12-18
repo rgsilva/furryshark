@@ -6,6 +6,8 @@
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkCookieJar>
+#include <QList>
+#include "songinfo.h"
 
 class Grooveshark : public QObject
 {
@@ -17,13 +19,15 @@ private:
     QNetworkReply *getSessionReply;
     QNetworkReply *searchReply;
 
+    QList<SongInfo*> *searchResults;
+
 public:
     Grooveshark(QObject *parent);
     ~Grooveshark();
 
     void authenticate();
     void getSessionId();
-    void search(QString queryStr);
+    QList<SongInfo*>* search(QString queryStr);
 
 public slots:
     void authenticateFinished();
