@@ -1,0 +1,37 @@
+Furryshark
+----------
+
+Furryshark is a simple application that interfaces with Grooveshark servers by
+using HTTP requests passing JSON-encoded objects. Grooveshark's website does
+exactly the same thing, but using JavaScript and Flash to request the information.
+What I'm doing with this project is try to reproduce their behavior, creating a 
+cross-platform desktop application for it.
+
+Requirements
+------------
+
+- Qt4
+- Qjson	(http://qjson.sourceforge.net/)
+
+TO DO
+-----
+
+- Play and/or download songs.
+- Improve the UI.
+- Consider token expire time.
+- Maybe auto-update GS password (it's somewhere in their JS files)
+
+Disclaimer
+----------
+
+This is for EDUCATIONAL PURPOSE ONLY. Whatever you do with this application or
+its code it's YOUR and ONLY YOURS responsibility. I created this project mainly
+by reverse engineering Grooveshark's communication using sniffers and browser's
+developer tools. They can change the entire website internal protocol any day,
+so this code can be obsolete at any time without any kind of warning. Of course,
+I'll try to keep this as much updated as I can, and I hope some people can help
+with this project.
+
+So, please, feel free to fork this project! :)
+
+-- Ricardo
