@@ -6,10 +6,8 @@
 
 QT       += core gui network
 
-TARGET = Grooveshark
+TARGET = Furryshark
 TEMPLATE = app
-
-
 
 SOURCES += main.cpp\
         mainwindow.cpp \
