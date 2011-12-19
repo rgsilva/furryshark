@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    // Create the table view model.
+    // Create and setup the model.
     this->tableModel = new QStandardItemModel();
 
     // Create all columns.
@@ -23,9 +23,6 @@ MainWindow::MainWindow(QWidget *parent) :
     list.append("Album");
     list.append("Track No.");
     this->tableModel->setHorizontalHeaderLabels(list);
-
-    // No lines for now.
-    this->tableModel->setRowCount(0);
 
     // Apply the model.
     ui->searchTable->setModel(this->tableModel);
@@ -39,32 +36,33 @@ MainWindow::~MainWindow()
 void MainWindow::searchButtonClicked() {
     int row = 0;
 
+    // Clear the table.
+    this->tableModel->removeRows(0, this->tableModel->rowCount());
+
     // Setup user interface.
     ui->statusBar->showMessage("Searching...");
     ui->searchText->setEnabled(false);
     ui->searchButton->setEnabled(false);
 
-    // Test 1: authentication.
-    Grooveshark *gs = new Grooveshark(this);
+    // Search.
+    Grooveshark *gs = Grooveshark::getInstance();
+    QList<SongInfo> songs = gs->search(ui->searchText->text());
 
-    gs->getSessionId();
-    gs->authenticate();
-
-    QList<SongInfo*> *songs = gs->search(ui->searchText->text());
 
     // Set the number of rows.
-    this->tableModel->setRowCount(songs->count());
+    this->tableModel->setRowCount(songs.count());
 
     // Add each song to the table.
-    foreach (SongInfo *songInfo, songs->toStdList()) {
-        this->tableModel->setItem(row, 0, new QStandardItem(songInfo->id));
-        this->tableModel->setItem(row, 1, new QStandardItem(songInfo->artist));
-        this->tableModel->setItem(row, 2, new QStandardItem(songInfo->title));
-        this->tableModel->setItem(row, 3, new QStandardItem(songInfo->album));
-        this->tableModel->setItem(row++, 4, new QStandardItem(songInfo->track));
+    foreach (SongInfo songInfo, songs.toStdList()) {
+        this->tableModel->setItem(row, 0, new QStandardItem(songInfo.id));
+        this->tableModel->setItem(row, 1, new QStandardItem(songInfo.artist));
+        this->tableModel->setItem(row, 2, new QStandardItem(songInfo.title));
+        this->tableModel->setItem(row, 3, new QStandardItem(songInfo.album));
+        this->tableModel->setItem(row++, 4, new QStandardItem(songInfo.track));
     }
 
-    qDebug() << songs;
-    qDebug() << songs->count();
-
+    // Setup user interface.
+    ui->statusBar->showMessage("");
+    ui->searchText->setEnabled(true);
+    ui->searchButton->setEnabled(true);
 }

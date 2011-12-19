@@ -12,22 +12,27 @@
 class Grooveshark : public QObject
 {
     Q_OBJECT
-
 private:
+    Grooveshark(QObject *parent = NULL);
+    ~Grooveshark();
+
+    void checkStatus();
+    void authenticate();
+    void getSessionId();
+
+    static Grooveshark *instance;
+
     QNetworkAccessManager *manager;
     QNetworkReply *authenticateReply;
     QNetworkReply *getSessionReply;
     QNetworkReply *searchReply;
 
-    QList<SongInfo*> *searchResults;
+    QList<SongInfo> searchResults;
 
 public:
-    Grooveshark(QObject *parent);
-    ~Grooveshark();
+    static Grooveshark* getInstance();
 
-    void authenticate();
-    void getSessionId();
-    QList<SongInfo*>* search(QString queryStr);
+    QList<SongInfo> search(QString queryStr);
 
 public slots:
     void authenticateFinished();

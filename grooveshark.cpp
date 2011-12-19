@@ -8,10 +8,11 @@
 #include <QCryptographicHash>
 #include <QEventLoop>
 
+Grooveshark* Grooveshark::instance = NULL;
+
 Grooveshark::Grooveshark(QObject *parent) : QObject(parent)
 {
-    this->manager = new QNetworkAccessManager(this);
-    this->searchResults = NULL;
+    this->manager = new QNetworkAccessManager(parent);
 }
 
 Grooveshark::~Grooveshark() {
@@ -19,7 +20,22 @@ Grooveshark::~Grooveshark() {
 }
 
 // ----------------------------------------
-// - Public methods
+// - Private methods
+
+void Grooveshark::checkStatus() {
+    Global *global = Global::getInstance();
+
+    // Check PHPSESSID.
+    if (global->session.isEmpty()) {
+        this->getSessionId();
+    }
+
+    // Check communication token.
+    if (global->commToken.isEmpty()) {
+        this->authenticate();
+    }
+}
+
 
 void Grooveshark::authenticate() {
     QEventLoop eventLoop;
@@ -65,8 +81,21 @@ void Grooveshark::getSessionId() {
     eventLoop.exec();
 }
 
-QList<SongInfo*>* Grooveshark::search(QString queryStr) {
+// ----------------------------------------
+// - Public methods
+
+Grooveshark* Grooveshark::getInstance() {
+    if (Grooveshark::instance == NULL) {
+        Grooveshark::instance = new Grooveshark();
+    }
+
+    return Grooveshark::instance;
+}
+
+QList<SongInfo> Grooveshark::search(QString queryStr) {
     QEventLoop eventLoop;
+
+    this->checkStatus();
 
     // Create the paramaters object with our search parameters.
     QVariantMap parameters;
@@ -147,16 +176,7 @@ void Grooveshark::getSessionFinished() {
 void Grooveshark::searchFinished() {
     bool parseOk = true;
 
-    // Delete the old list.
-    if (this->searchResults != NULL) {
-        foreach (SongInfo *songInfo, this->searchResults->toStdList()) {
-            delete songInfo;
-        }
-
-        delete this->searchResults;
-    }
-
-    this->searchResults = new QList<SongInfo*>();
+    this->searchResults = QList<SongInfo>();
 
     // Check for errors.
     if (searchReply->error() == QNetworkReply::NoError) {
@@ -169,15 +189,15 @@ void Grooveshark::searchFinished() {
         // If everything went fine, let's save the result. Otherwise, errors.
         if (parseOk) {
             foreach (QVariant song, responseData["result"].toMap()["result"].toList()) {
-                SongInfo *songInfo = new SongInfo();
+                SongInfo songInfo = SongInfo();
 
-                songInfo->id = song.toMap()["SongID"].toString();
-                songInfo->artist = song.toMap()["ArtistName"].toString();
-                songInfo->title = song.toMap()["SongName"].toString();
-                songInfo->album = song.toMap()["AlbumName"].toString();
-                songInfo->track = song.toMap()["TrackNum"].toString();
+                songInfo.id = song.toMap()["SongID"].toString();
+                songInfo.artist = song.toMap()["ArtistName"].toString();
+                songInfo.title = song.toMap()["SongName"].toString();
+                songInfo.album = song.toMap()["AlbumName"].toString();
+                songInfo.track = song.toMap()["TrackNum"].toString();
 
-                this->searchResults->append(songInfo);
+                this->searchResults.append(songInfo);
             }
         } else {
             qDebug() << "searchFinished() failed: !parseOk";
