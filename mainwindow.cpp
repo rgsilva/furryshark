@@ -1,5 +1,7 @@
 #include <QList>
+#include <QModelIndexList>
 #include <QDebug>
+#include <QMessageBox>
 #include "songinfo.h"
 
 #include "mainwindow.h"
@@ -31,6 +33,29 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::doubleClickSong() {
+    QModelIndex selectedRow = ui->searchTable->selectionModel()->selection().indexes().first();
+
+    // Get song information.
+    QString songID = ui->searchTable->model()->index(selectedRow.row(), 0).data(0).toString();
+    QString songArtist = ui->searchTable->model()->index(selectedRow.row(), 1).data(0).toString();
+    QString songTitle = ui->searchTable->model()->index(selectedRow.row(), 2).data(0).toString();
+
+    // Filename.
+    QString file = songArtist + " - " + songTitle + ".mp3";
+
+    // Download it.
+    Grooveshark *gs = Grooveshark::getInstance();
+    if (gs->saveSong(songID, file)) {
+        QMessageBox *box = new QMessageBox(this);
+
+        box->setText("Song downloaded: " + file);
+        box->setStandardButtons(QMessageBox::Ok);
+        box->setDefaultButton(QMessageBox::Ok);
+        box->show();
+    }
 }
 
 void MainWindow::searchButtonClicked() {

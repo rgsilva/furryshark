@@ -19,24 +19,35 @@ private:
     void checkStatus();
     void authenticate();
     void getSessionId();
+    bool getStreamData(QString ip, QString key);
+    bool getStreamKey(QString songID);
 
     static Grooveshark *instance;
 
     QNetworkAccessManager *manager;
     QNetworkReply *authenticateReply;
     QNetworkReply *getSessionReply;
+    QNetworkReply *getStreamDataReply;
+    QNetworkReply *getStreamKeyReply;
     QNetworkReply *searchReply;
 
     QList<SongInfo> searchResults;
+    QByteArray streamData;
+    QString streamIp;
+    QString streamKey;
+    QString songId;
 
 public:
     static Grooveshark* getInstance();
 
+    bool saveSong(QString songID, QString filename);
     QList<SongInfo> search(QString queryStr);
 
 public slots:
     void authenticateFinished();
     void getSessionFinished();
+    void getStreamDataFinished();
+    void getStreamKeyFinished();
     void searchFinished();
 };
 

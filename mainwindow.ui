@@ -97,8 +97,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>searchTable</sender>
+   <signal>doubleClicked(QModelIndex)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>doubleClickSong()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>143</x>
+     <y>328</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>151</x>
+     <y>381</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>searchButtonClicked()</slot>
+  <slot>doubleClickSong()</slot>
  </slots>
 </ui>

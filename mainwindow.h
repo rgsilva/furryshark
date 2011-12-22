@@ -17,6 +17,7 @@ public:
     ~MainWindow();
 
 public slots:
+    void doubleClickSong();
     void searchButtonClicked();
 
 private:

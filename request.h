@@ -7,7 +7,10 @@
 class Request
 {
 public:
-    static QVariantMap callMethod(QString methodName, QVariant parameters);
+    enum Client { htmlshark, jsqueue };
+
+    static QVariantMap callMethod(QString methodName, QVariant parameters, Client client);
+    static QVariantMap country();
 };
 
 #endif // REQUEST_H

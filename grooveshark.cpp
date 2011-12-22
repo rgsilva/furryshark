@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QCryptographicHash>
 #include <QEventLoop>
+#include <QFile>
 
 Grooveshark* Grooveshark::instance = NULL;
 
@@ -45,7 +46,7 @@ void Grooveshark::authenticate() {
     parameters.insert("secretKey", QCryptographicHash::hash(Global::getInstance()->session.toAscii(), QCryptographicHash::Md5).toHex());
 
     // Create the JSON object for getCommunicationToken.
-    QVariantMap postData = Request::callMethod("getCommunicationToken", parameters);
+    QVariantMap postData = Request::callMethod("getCommunicationToken", parameters, Request::htmlshark);
 
     // Serialize the JSON object.
     QJson::Serializer serializer;
@@ -81,6 +82,71 @@ void Grooveshark::getSessionId() {
     eventLoop.exec();
 }
 
+bool Grooveshark::getStreamData(QString ip, QString key) {
+    QEventLoop eventLoop;
+
+    // Prepare the POST information.
+    QByteArray postData = QString("streamKey=" + key).toAscii();
+
+    // Prepare the request.
+    QNetworkRequest request;
+    request.setUrl(QUrl("http://" + ip + "/stream.php"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    request.setRawHeader("Referer", "http://grooveshark.com/JSQueue.swf?20111213.02");
+    request.setRawHeader("Origin", "http://grooveshark.com");
+    request.setRawHeader("Accept", "*/*");
+
+    // Set the reply signals.
+    this->getStreamDataReply = this->manager->post(request, postData);
+    connect(this->getStreamDataReply, SIGNAL(finished()), this, SLOT(getStreamDataFinished()));
+
+    // Wait the request to finish first.
+    connect(this->getStreamDataReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+    eventLoop.exec();
+
+    return true;
+}
+
+bool Grooveshark::getStreamKey(QString songID) {
+    QEventLoop eventLoop;
+
+    // Create the song list.
+    QList<QVariant> songs;
+    songs.append(songID.toInt());
+
+    // Save the song ID for the future.
+    this->songId = songID;
+
+    // Create the paramaters object with our request.
+    QVariantMap parameters;
+    parameters.insert("songIDs", QVariantList(songs));
+    parameters.insert("mobile", false);
+    parameters.insert("prefetch", false);
+    parameters.insert("country", Request::country());
+
+    // Create the JSON object for getCommunicationToken.
+    QVariantMap postData = Request::callMethod("getStreamKeysFromSongIDs", parameters, Request::jsqueue);
+
+    // Serialize the JSON object.
+    QJson::Serializer serializer;
+    QByteArray json = serializer.serialize(postData);
+
+    // Prepare the request.
+    QNetworkRequest request;
+    request.setUrl(QUrl("http://grooveshark.com/more.php?getStreamKeysFromSongIDs"));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    // Set the reply signals.
+    this->getStreamKeyReply = this->manager->post(request, json);
+    connect(this->getStreamKeyReply, SIGNAL(finished()), this, SLOT(getStreamKeyFinished()));
+
+    // Wait the request to finish first.
+    connect(this->getStreamKeyReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+    eventLoop.exec();
+
+    return true;
+}
+
 // ----------------------------------------
 // - Public methods
 
@@ -90,6 +156,32 @@ Grooveshark* Grooveshark::getInstance() {
     }
 
     return Grooveshark::instance;
+}
+
+bool Grooveshark::saveSong(QString songID, QString filename) {
+    // Let's try to get the stream key here.
+    if (this->getStreamKey(songID)) {
+        // Request the song stream.
+        if (this->getStreamData(this->streamIp, this->streamKey)) {
+            // We have our data. Let's write it down to the file.
+            QFile file(filename);
+
+            if (file.open(QFile::WriteOnly)) {
+                file.write(this->streamData);
+            } else {
+                qDebug() << "Couldn't open file" << filename << "for write.";
+                return false;
+            }
+        } else {
+            qDebug() << "Failed to get stream data for songID" << songID;
+            return false;
+        }
+    } else {
+        qDebug() << "Failed to get stream key for songID" << songID;
+        return false;
+    }
+
+    return true;
 }
 
 QList<SongInfo> Grooveshark::search(QString queryStr) {
@@ -105,7 +197,7 @@ QList<SongInfo> Grooveshark::search(QString queryStr) {
     parameters.insert("type", "Songs");
 
     // Create the JSON object for getCommunicationToken.
-    QVariantMap postData = Request::callMethod("getResultsFromSearch", parameters);
+    QVariantMap postData = Request::callMethod("getResultsFromSearch", parameters, Request::htmlshark);
 
     // Serialize the JSON object.
     QJson::Serializer serializer;
@@ -173,6 +265,49 @@ void Grooveshark::getSessionFinished() {
     qDebug() << "No PHPSESSID cookie found.";
 }
 
+void Grooveshark::getStreamDataFinished() {
+    // Check for errors.
+    if (this->getStreamDataReply->error() == QNetworkReply::NoError) {
+        // Everything is fine, let's just read our data.
+        this->streamData = this->getStreamDataReply->readAll();
+    } else {
+        // Errors found.
+        qDebug() << "getStreamDataFinished() failed: reply has errors.";
+        qDebug() << "errorString():" << this->getStreamDataReply->errorString();
+    }
+}
+
+void Grooveshark::getStreamKeyFinished() {
+    bool parseOk;
+
+    // Check for errors.
+    if (this->getStreamKeyReply->error() == QNetworkReply::NoError) {
+        // Read data.
+        QByteArray responseBytes = this->getStreamKeyReply->readAll();
+
+        // Parse the data to a map.
+        QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
+
+        // If everything went fine, let's save the result. Otherwise, errors.
+        if (parseOk) {
+            // Get song data.
+            QVariantMap songData = responseData["result"].toMap()[this->songId].toMap();
+
+            // And now, finally, get the stream information.
+            this->streamIp = songData["ip"].toString();
+            this->streamKey = songData["streamKey"].toString();
+
+            qDebug() << "Stream from server" << this->streamIp << "using key" << this->streamKey;
+        } else {
+            qDebug() << "getStreamKeyFinished() failed: !parseOk";
+            qDebug() << "responseBytes as string:" << QString(responseBytes);
+        }
+    } else {
+        qDebug() << "getStreamKeyFinished() failed: reply has errors.";
+        qDebug() << "errorString():" << this->getStreamKeyReply->errorString();
+    }
+}
+
 void Grooveshark::searchFinished() {
     bool parseOk = true;
 
@@ -201,10 +336,10 @@ void Grooveshark::searchFinished() {
             }
         } else {
             qDebug() << "searchFinished() failed: !parseOk";
-            qDebug() << "responseBytes as string: " << QString(responseBytes);
+            qDebug() << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
         qDebug() << "searchFinished() failed: reply has errors.";
-        qDebug() << "errorString():" << authenticateReply->errorString();
+        qDebug() << "errorString():" << this->searchReply->errorString();
     }
 }

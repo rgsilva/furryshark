@@ -26,14 +26,24 @@ QString Util::getRandom() {
 }
 
 
-QString Util::getTokenFor(QString method) {
+QString Util::getTokenFor(QString method, Request::Client client) {
     Global *global = Global::getInstance();
+
+    // Which password we should use?
+    QString password;
+    if (client == Request::htmlshark) {
+        password = Global::getInstance()->htmlsharkPassword;
+    } else if (client == Request::jsqueue){
+        password = Global::getInstance()->jsqueuePassword;
+    } else {
+        qDebug() << "Unknown client in getTokenFor()";
+    }
 
     // Get a new random number.
     QString random = Util::getRandom();
 
     // Format: method:communicationToken:password:lastRandomizer
-    QString token = method + ":" + global->commToken + ":" + global->gsPassword + ":" + random;
+    QString token = method + ":" + global->commToken + ":" + password + ":" + random;
 
     // SHA1 it.
     token = QCryptographicHash::hash(token.toAscii(), QCryptographicHash::Sha1).toHex();

@@ -17,9 +17,13 @@ public:
     QString random();
 
     QString commToken;
-    QString gsPassword;
+    QString htmlsharkPassword;
+    QString jsqueuePassword;
     QString session;
     QUuid uuid;
+
+    QString htmlsharkVersion;
+    QString jsqueueVersion;
 };
 
 #endif // GLOBAL_H

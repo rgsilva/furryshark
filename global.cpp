@@ -9,13 +9,22 @@ Global* Global::instance = NULL;
 
 Global::Global() {
     this->commToken = QString("");
-    this->gsPassword = "bewareOfTheGingerApocalypse";
+
     this->session = QString("");
     this->uuid = QUuid::createUuid();
 
+    this->htmlsharkPassword = "bewareOfTheGingerApocalypse";
+    this->htmlsharkVersion = "20111117";
+
+    this->jsqueuePassword = "epicBiWinning";
+    this->jsqueueVersion = "20111117.02";
+
     qDebug() << "-- Global startup --";
-    qDebug() << "gsPassword:" << this->gsPassword;
     qDebug() << "uuid:" << this->uuid.toString();
+    qDebug() << "htmlshark password:" << this->htmlsharkPassword;
+    qDebug() << "htmlshark version:" << this->htmlsharkVersion;
+    qDebug() << "jsqueue password:" << this->jsqueuePassword;
+    qDebug() << "jsqueue version:" << this->jsqueueVersion;
 }
 
 Global::~Global() {

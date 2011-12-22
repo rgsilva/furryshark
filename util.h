@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <QString>
+#include "request.h"
 
 class Util
 {
@@ -11,7 +12,7 @@ private:
 public:
     Util();
 
-    static QString getTokenFor(QString method);
+    static QString getTokenFor(QString method, Request::Client client);
 };
 
 #endif // UTIL_H
