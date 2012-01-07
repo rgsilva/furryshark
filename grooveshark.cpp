@@ -158,35 +158,41 @@ Grooveshark* Grooveshark::getInstance() {
     return Grooveshark::instance;
 }
 
-bool Grooveshark::saveSong(QString songID, QString filename) {
+void Grooveshark::downloadSong(SongInfo* song, QString filename) {
     // Let's try to get the stream key here.
-    if (this->getStreamKey(songID)) {
+    if (this->getStreamKey(song->id)) {
+        // We're now downloading the song.
+        emit downloadStarted();
+
         // Request the song stream.
         if (this->getStreamData(this->streamIp, this->streamKey)) {
             // We have our data. Let's write it down to the file.
             QFile file(filename);
 
             if (file.open(QFile::WriteOnly)) {
+                // Read and write stream data.
                 file.write(this->streamData);
+                file.flush();
+                file.close();
+
+                // And we now have finished the song download.
+                emit downloadFinished(song);
             } else {
                 qDebug() << "Couldn't open file" << filename << "for write.";
-                return false;
+                return;
             }
         } else {
-            qDebug() << "Failed to get stream data for songID" << songID;
-            return false;
+            qDebug() << "Failed to get stream data for songID" << song->id;
+            return;
         }
     } else {
-        qDebug() << "Failed to get stream key for songID" << songID;
-        return false;
+        qDebug() << "Failed to get stream key for songID" << song->id;
+        return;
     }
-
-    return true;
 }
 
-QList<SongInfo> Grooveshark::search(QString queryStr) {
-    QEventLoop eventLoop;
-
+void Grooveshark::querySong(QString queryStr) {
+    // Make sure we're ok to search first.
     this->checkStatus();
 
     // Create the paramaters object with our search parameters.
@@ -210,13 +216,9 @@ QList<SongInfo> Grooveshark::search(QString queryStr) {
 
     // Set the reply signals.
     this->searchReply = this->manager->post(request, json);
-    connect(this->searchReply, SIGNAL(finished()), this, SLOT(searchFinished()));
+    connect(this->searchReply, SIGNAL(finished()), this, SLOT(querySongFinished()));
 
-    // Wait the request to finish first.
-    connect(this->searchReply, SIGNAL(finished()), &eventLoop, SLOT(quit()));
-    eventLoop.exec();
-
-    return this->searchResults;
+    emit this->searchStarted();
 }
 
 // ----------------------------------------
@@ -308,10 +310,10 @@ void Grooveshark::getStreamKeyFinished() {
     }
 }
 
-void Grooveshark::searchFinished() {
+void Grooveshark::querySongFinished() {
     bool parseOk = true;
 
-    this->searchResults = QList<SongInfo>();
+    QList<SongInfo*>* searchResults = new QList<SongInfo*>();
 
     // Check for errors.
     if (searchReply->error() == QNetworkReply::NoError) {
@@ -324,22 +326,24 @@ void Grooveshark::searchFinished() {
         // If everything went fine, let's save the result. Otherwise, errors.
         if (parseOk) {
             foreach (QVariant song, responseData["result"].toMap()["result"].toList()) {
-                SongInfo songInfo = SongInfo();
+                SongInfo* songInfo = new SongInfo();
 
-                songInfo.id = song.toMap()["SongID"].toString();
-                songInfo.artist = song.toMap()["ArtistName"].toString();
-                songInfo.title = song.toMap()["SongName"].toString();
-                songInfo.album = song.toMap()["AlbumName"].toString();
-                songInfo.track = song.toMap()["TrackNum"].toString();
+                songInfo->id = song.toMap()["SongID"].toString();
+                songInfo->artist = song.toMap()["ArtistName"].toString();
+                songInfo->title = song.toMap()["SongName"].toString();
+                songInfo->album = song.toMap()["AlbumName"].toString();
+                songInfo->track = song.toMap()["TrackNum"].toString();
 
-                this->searchResults.append(songInfo);
+                searchResults->append(songInfo);
             }
         } else {
-            qDebug() << "searchFinished() failed: !parseOk";
+            qDebug() << "getSearchResultsFinished() failed: !parseOk";
             qDebug() << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
-        qDebug() << "searchFinished() failed: reply has errors.";
+        qDebug() << "getSearchResultsFinished() failed: reply has errors.";
         qDebug() << "errorString():" << this->searchReply->errorString();
     }
+
+    emit searchFinished(searchResults);
 }
