@@ -16,10 +16,12 @@ Requirements
 TO DO
 -----
 
-- Play and/or download songs.
+- Add error control on all steps (authentication, search, download, etc) using signals.
+- Play songs without downloading them.
 - Improve the UI.
 - Consider token expire time.
-- Maybe auto-update GS password (it's somewhere in their JS files)
+- Maybe auto-update GS password (it's somewhere in their JS files), but the
+  flash pass might be a problem.
 
 Disclaimer
 ----------
