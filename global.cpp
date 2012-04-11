@@ -13,8 +13,8 @@ Global::Global() {
     this->session = QString("");
     this->uuid = QUuid::createUuid();
 
-    this->htmlsharkPassword = "bewareOfTheGingerApocalypse";
-    this->htmlsharkVersion = "20111117";
+    this->htmlsharkPassword = "reallyHotSauce";
+    this->htmlsharkVersion = "20120312";
 
     this->jsqueuePassword = "epicBiWinning";
     this->jsqueueVersion = "20111117.02";

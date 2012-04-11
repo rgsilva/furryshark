@@ -54,7 +54,7 @@ void Grooveshark::authenticate() {
 
     // Prepare the request.
     QNetworkRequest request;
-    request.setUrl(QUrl("http://grooveshark.com/more.php?getCommunicationToken"));
+    request.setUrl(QUrl("https://grooveshark.com/more.php?getCommunicationToken"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     // Set the reply signals.
