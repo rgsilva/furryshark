@@ -16,8 +16,8 @@ Global::Global() {
     this->htmlsharkPassword = "reallyHotSauce";
     this->htmlsharkVersion = "20120312";
 
-    this->jsqueuePassword = "epicBiWinning";
-    this->jsqueueVersion = "20111117.02";
+    this->jsqueuePassword = "circlesAndSquares";
+    this->jsqueueVersion = "20120312.05";
 
     qDebug() << "-- Global startup --";
     qDebug() << "uuid:" << this->uuid.toString();

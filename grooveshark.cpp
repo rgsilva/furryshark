@@ -124,7 +124,7 @@ bool Grooveshark::getStreamKey(QString songID) {
     parameters.insert("prefetch", false);
     parameters.insert("country", Request::country());
 
-    // Create the JSON object for getCommunicationToken.
+    // Create the JSON object for getStreamKeysFromSongIDs.
     QVariantMap postData = Request::callMethod("getStreamKeysFromSongIDs", parameters, Request::jsqueue);
 
     // Serialize the JSON object.
@@ -202,7 +202,7 @@ void Grooveshark::querySong(QString queryStr) {
     parameters.insert("query", queryStr);
     parameters.insert("type", "Songs");
 
-    // Create the JSON object for getCommunicationToken.
+    // Create the JSON object for getResultsFromSearch.
     QVariantMap postData = Request::callMethod("getResultsFromSearch", parameters, Request::htmlshark);
 
     // Serialize the JSON object.
