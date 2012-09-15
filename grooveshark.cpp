@@ -71,7 +71,7 @@ void Grooveshark::getSessionId() {
 
     // Do a simple GET for grooveshark.com.
     QNetworkRequest request;
-    request.setUrl(QUrl("http://grooveshark.com/"));
+    request.setUrl(QUrl("https://grooveshark.com/"));
 
     // Send the request.
     this->getSessionReply = this->manager->get(request);
@@ -110,30 +110,28 @@ bool Grooveshark::getStreamData(QString ip, QString key) {
 bool Grooveshark::getStreamKey(QString songID) {
     QEventLoop eventLoop;
 
-    // Create the song list.
-    QList<QVariant> songs;
-    songs.append(songID.toInt());
-
     // Save the song ID for the future.
     this->songId = songID;
 
     // Create the paramaters object with our request.
     QVariantMap parameters;
-    parameters.insert("songIDs", QVariantList(songs));
+    parameters.insert("songID", songID);
     parameters.insert("mobile", false);
     parameters.insert("prefetch", false);
     parameters.insert("country", Request::country());
 
-    // Create the JSON object for getStreamKeysFromSongIDs.
-    QVariantMap postData = Request::callMethod("getStreamKeysFromSongIDs", parameters, Request::jsqueue);
+    // Create the JSON object for getStreamKeyFromSongIDEx.
+    QVariantMap postData = Request::callMethod("getStreamKeyFromSongIDEx", parameters, Request::jsqueue);
 
     // Serialize the JSON object.
     QJson::Serializer serializer;
     QByteArray json = serializer.serialize(postData);
 
+    qDebug() << QString(json);
+
     // Prepare the request.
     QNetworkRequest request;
-    request.setUrl(QUrl("http://grooveshark.com/more.php?getStreamKeysFromSongIDs"));
+    request.setUrl(QUrl("http://grooveshark.com/more.php?getStreamKeyFromSongIDEx"));
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
     // Set the reply signals.
@@ -238,10 +236,15 @@ void Grooveshark::authenticateFinished() {
         // If everything went fine, save our token. Otherwise, errors.
         if (parseOk) {
             Global::getInstance()->commToken = responseData["result"].toString();
-            qDebug() << "Got communication token:" << Global::getInstance()->commToken;
+            if (Global::getInstance()->commToken == "") {
+                qDebug() << "authenticationFinished() failed: empty communication token.";
+                qDebug() << "responseBytes as string:" << QString(responseBytes);
+            } else {
+                qDebug() << "Got communication token:" << Global::getInstance()->commToken;
+            }
         } else {
             qDebug() << "authenticationFinished() failed: !parseOk";
-            qDebug() << "responseBytes as string: " << QString(responseBytes);
+            qDebug() << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
         qDebug() << "authenticationFinished() failed: reply has errors.";
@@ -250,7 +253,7 @@ void Grooveshark::authenticateFinished() {
 }
 
 void Grooveshark::getSessionFinished() {
-    QList<QNetworkCookie> cookieList = this->manager->cookieJar()->cookiesForUrl(QUrl("http://grooveshark.com/"));
+    QList<QNetworkCookie> cookieList = this->manager->cookieJar()->cookiesForUrl(QUrl("https://grooveshark.com/"));
 
     foreach(QNetworkCookie cookie, cookieList) {
         // Find the PHPSESSID cookie.
@@ -287,13 +290,15 @@ void Grooveshark::getStreamKeyFinished() {
         // Read data.
         QByteArray responseBytes = this->getStreamKeyReply->readAll();
 
+        qDebug() << QString(responseBytes);
+
         // Parse the data to a map.
         QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
 
         // If everything went fine, let's save the result. Otherwise, errors.
         if (parseOk) {
             // Get song data.
-            QVariantMap songData = responseData["result"].toMap()[this->songId].toMap();
+            QVariantMap songData = responseData["result"].toMap();
 
             // And now, finally, get the stream information.
             this->streamIp = songData["ip"].toString();
@@ -319,6 +324,8 @@ void Grooveshark::querySongFinished() {
     if (searchReply->error() == QNetworkReply::NoError) {
         // Read data.
         QByteArray responseBytes = this->searchReply->readAll();
+
+        qDebug() << QString(responseBytes);
 
         // Parse the data to a map.
         QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
