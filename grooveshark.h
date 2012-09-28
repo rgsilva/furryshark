@@ -9,6 +9,16 @@
 #include <QList>
 #include "songinfo.h"
 
+typedef enum {
+    gsCreatingSession,
+    gsGettingCommToken,
+    gsReady,
+    gsSearching,
+    gsSearchComplete,
+    gsDownloading,
+    gsDownloadComplete
+} GSState;
+
 class Grooveshark : public QObject
 {
     Q_OBJECT
@@ -16,9 +26,11 @@ private:
     Grooveshark(QObject *parent = NULL);
     ~Grooveshark();
 
-    void checkStatus();
-    void authenticate();
-    void getSessionId();
+    bool checkStatus();
+
+    void createSession();
+    void getCommunicationToken();
+
     bool getStreamData(QString ip, QString key);
     bool getStreamKey(QString songID);
 
@@ -31,7 +43,6 @@ private:
     QNetworkReply *getStreamKeyReply;
     QNetworkReply *searchReply;
 
-
     QByteArray streamData;
     QString streamIp;
     QString streamKey;
@@ -39,22 +50,25 @@ private:
 
 public:
     static Grooveshark* getInstance();
+    static QString getStateString(GSState state);
 
     void querySong(QString queryStr);
     void downloadSong(SongInfo* song, QString filename);
 
 public slots:
-    void authenticateFinished();
-    void getSessionFinished();
+    void createSessionFinished();
+    void getCommunicationTokenFinished();
+
     void getStreamDataFinished();
     void getStreamKeyFinished();
     void querySongFinished();
 
 signals:
-    void searchStarted();
     void searchFinished(QList<SongInfo*>* songs);
     void downloadStarted();
     void downloadFinished(SongInfo* song);
+
+    void stateChanged(GSState state, void* extra);
 };
 
 #endif // GROOVESHARK_H

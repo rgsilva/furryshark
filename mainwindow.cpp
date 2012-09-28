@@ -30,12 +30,16 @@ MainWindow::MainWindow(QWidget *parent) :
     // Apply the model.
     ui->searchTable->setModel(this->tableModel);
 
+    // Column width...
+    ui->searchTable->setColumnWidth(0, 66);
+    ui->searchTable->setColumnWidth(1, 194);
+    ui->searchTable->setColumnWidth(2, 194);
+    ui->searchTable->setColumnWidth(3, 194);
+    ui->searchTable->setColumnWidth(4, 75);
+
     // Let's prepare the grooveshark stuff and connect to all signals.
     this->grooveshark = Grooveshark::getInstance();
-    connect(this->grooveshark, SIGNAL(searchStarted()), this, SLOT(searchStarted()));
-    connect(this->grooveshark, SIGNAL(searchFinished(QList<SongInfo*>*)), this, SLOT(searchFinished(QList<SongInfo*>*)));
-    connect(this->grooveshark, SIGNAL(downloadStarted()), this, SLOT(downloadStarted()));
-    connect(this->grooveshark, SIGNAL(downloadFinished(SongInfo*)), this, SLOT(downloadFinished(SongInfo*)));
+    connect(this->grooveshark, SIGNAL(stateChanged(GSState,void*)), this, SLOT(stateChanged(GSState,void*)));
 
     // Connect all UI signals.
     connect(ui->searchButton, SIGNAL(clicked()), this, SLOT(searchButton_clicked()));
@@ -49,13 +53,18 @@ MainWindow::~MainWindow()
 
 // ----------------------------------------------------------------------
 
+void MainWindow::searchButton_clicked() {
+    // Call search.
+    this->grooveshark->querySong(ui->searchText->text());
+}
+
 void MainWindow::searchTable_doubleClicked() {
     int row = ui->searchTable->currentIndex().row();
 
     if (row < this->searchResults->count()) {
         SongInfo *song = this->searchResults->at(row);
 
-        QString filename = "(" + song->id + ") " + song->artist + " - " + song->title + ".mp3";
+        QString filename = song->artist + " - " + song->title + ".mp3";
 
         filename = QFileDialog::getSaveFileName(this, "Save as", filename, "Audio file (*.mp3);;All files (*.*)", 0);
         if (!filename.isEmpty()) {
@@ -64,43 +73,55 @@ void MainWindow::searchTable_doubleClicked() {
     }
 }
 
-void MainWindow::searchButton_clicked() {
-    // Call search.
-    this->grooveshark->querySong(ui->searchText->text());
-}
-
 // ----------------------------------------------------------------------
 
-void MainWindow::downloadStarted()
+void MainWindow::stateChanged(GSState state, void *extra)
 {
-    ui->statusBar->showMessage("Downloading...");
+    ui->status->setText(Grooveshark::getStateString(state));
+
+    switch (state) {
+        case gsSearching:
+            this->clearResults();
+            this->blockUi();
+            break;
+
+        case gsSearchComplete:
+            this->showResults(static_cast<QList<SongInfo*>*>(extra));
+            this->unblockUi();
+            break;
+
+        case gsDownloading:
+            this->blockUi();
+            break;
+
+        case gsDownloadComplete:
+            this->showDownload(static_cast<SongInfo*>(extra));
+            this->unblockUi();
+            break;
+    }
 }
 
-void MainWindow::downloadFinished(SongInfo* song)
+void MainWindow::blockUi()
 {
-    QString songStr = QString("ID: %1\nArtist: %2\nAlbum: %3\nTitle: %4\nTrack: %5").arg(song->id, song->artist, song->album, song->title, song->track);
-
-    QMessageBox *box = new QMessageBox(this);
-    box->setText("Song downloaded!\n\n" + songStr);
-    box->setStandardButtons(QMessageBox::Ok);
-    box->setDefaultButton(QMessageBox::Ok);
-    box->show();
-
-    ui->statusBar->showMessage("");
+    ui->searchText->setEnabled(false);
+    ui->searchButton->setEnabled(false);
+    ui->searchTable->setEnabled(false);
 }
 
-void MainWindow::searchStarted()
+void MainWindow::unblockUi()
+{
+    ui->searchText->setEnabled(true);
+    ui->searchButton->setEnabled(true);
+    ui->searchTable->setEnabled(true);
+}
+
+void MainWindow::clearResults()
 {
     // Clear the table.
     this->tableModel->removeRows(0, this->tableModel->rowCount());
-
-    // Setup user interface.
-    ui->statusBar->showMessage("Searching...");
-    ui->searchText->setEnabled(false);
-    ui->searchButton->setEnabled(false);
 }
 
-void MainWindow::searchFinished(QList<SongInfo*>* songs)
+void MainWindow::showResults(QList<SongInfo*>* songs)
 {
     int row = 0;
 
@@ -125,9 +146,15 @@ void MainWindow::searchFinished(QList<SongInfo*>* songs)
         delete this->searchResults;
     }
     this->searchResults = songs;
+}
 
-    // Setup user interface.
-    ui->statusBar->showMessage("");
-    ui->searchText->setEnabled(true);
-    ui->searchButton->setEnabled(true);
+void MainWindow::showDownload(SongInfo* song)
+{
+    QString songStr = QString("ID: %1\nArtist: %2\nAlbum: %3\nTitle: %4\nTrack: %5").arg(song->id, song->artist, song->album, song->title, song->track);
+
+    QMessageBox *box = new QMessageBox(this);
+    box->setText("Song downloaded!\n\n" + songStr);
+    box->setStandardButtons(QMessageBox::Ok);
+    box->setDefaultButton(QMessageBox::Ok);
+    box->show();
 }

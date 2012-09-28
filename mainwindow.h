@@ -16,6 +16,12 @@ class MainWindow : public QMainWindow
     Grooveshark *grooveshark;
     QList<SongInfo*> *searchResults;
 
+    void blockUi();
+    void unblockUi();
+    void clearResults();
+    void showResults(QList<SongInfo*> *songs);
+    void showDownload(SongInfo *song);
+
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
@@ -23,11 +29,7 @@ public:
 public slots:
     void searchTable_doubleClicked();
     void searchButton_clicked();
-
-    void downloadStarted();
-    void downloadFinished(SongInfo *song);
-    void searchStarted();
-    void searchFinished(QList<SongInfo*> *songs);
+    void stateChanged(GSState state, void *extra);
 
 private:
     Ui::MainWindow *ui;
