@@ -128,7 +128,7 @@ void Grooveshark::createSessionFinished() {
         // Find the PHPSESSID cookie.
         if (cookie.name() == "PHPSESSID") {
             Global::getInstance()->session = QString(cookie.value());
-            qDebug() << "PHPSESSID cookie found:" << Global::getInstance()->session;
+            qDebug() << "[createSessionFinished]" << "PHPSESSID cookie found:" << Global::getInstance()->session;
 
             // Leave this function.
             return;
@@ -136,7 +136,7 @@ void Grooveshark::createSessionFinished() {
     }
 
     // Something went wrong.
-    qDebug() << "No PHPSESSID cookie found.";
+    qDebug() << "[createSessionFinished]" << "No PHPSESSID cookie found.";
 }
 
 void Grooveshark::getCommunicationToken() {
@@ -184,18 +184,18 @@ void Grooveshark::getCommunicationTokenFinished() {
         if (parseOk) {
             Global::getInstance()->commToken = responseData["result"].toString();
             if (Global::getInstance()->commToken == "") {
-                qDebug() << "authenticationFinished() failed: empty communication token.";
-                qDebug() << "responseBytes as string:" << QString(responseBytes);
+                qDebug() << "[getCommunicationTokenFinished]" << "empty communication token.";
+                qDebug() << "[getCommunicationTokenFinished]" << "responseBytes as string:" << QString(responseBytes);
             } else {
-                qDebug() << "Got communication token:" << Global::getInstance()->commToken;
+                qDebug() << "[getCommunicationTokenFinished]" << "Got communication token:" << Global::getInstance()->commToken;
             }
         } else {
-            qDebug() << "authenticationFinished() failed: !parseOk";
-            qDebug() << "responseBytes as string:" << QString(responseBytes);
+            qDebug() << "[getCommunicationTokenFinished]" << "failed: !parseOk";
+            qDebug() << "[getCommunicationTokenFinished]" << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
-        qDebug() << "authenticationFinished() failed: reply has errors.";
-        qDebug() << "errorString():" << authenticateReply->errorString();
+        qDebug() << "[getCommunicationTokenFinished]" << "failed: reply has errors.";
+        qDebug() << "[getCommunicationTokenFinished]" << "errorString():" << authenticateReply->errorString();
     }
 }
 
@@ -241,8 +241,6 @@ void Grooveshark::querySongFinished() {
         // Read data.
         QByteArray responseBytes = this->searchReply->readAll();
 
-        qDebug() << QString(responseBytes);
-
         // Parse the data to a map.
         QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
 
@@ -260,12 +258,12 @@ void Grooveshark::querySongFinished() {
                 searchResults->append(songInfo);
             }
         } else {
-            qDebug() << "getSearchResultsFinished() failed: !parseOk";
-            qDebug() << "responseBytes as string:" << QString(responseBytes);
+            qDebug() << "[querySongFinished]" << "failed: !parseOk";
+            qDebug() << "[querySongFinished]" << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
-        qDebug() << "getSearchResultsFinished() failed: reply has errors.";
-        qDebug() << "errorString():" << this->searchReply->errorString();
+        qDebug() << "[querySongFinished]" << "failed: reply has errors.";
+        qDebug() << "[querySongFinished]" << "errorString():" << this->searchReply->errorString();
     }
 
     emit searchFinished(searchResults);
@@ -292,15 +290,15 @@ void Grooveshark::downloadSong(SongInfo* song, QString filename) {
                 // And we now have finished the song download.
                 emit stateChanged(gsDownloadComplete, (void*)song);
             } else {
-                qDebug() << "Couldn't open file" << filename << "for write.";
+                qDebug() << "[downloadSong]" << "Couldn't open file" << filename << "for write.";
                 return;
             }
         } else {
-            qDebug() << "Failed to get stream data for songID" << song->id;
+            qDebug() << "[downloadSong]" << "Failed to get stream data for songID" << song->id;
             return;
         }
     } else {
-        qDebug() << "Failed to get stream key for songID" << song->id;
+        qDebug() << "[downloadSong]" << "Failed to get stream key for songID" << song->id;
         return;
     }
 }
@@ -324,8 +322,6 @@ bool Grooveshark::getStreamKey(QString songID) {
     // Serialize the JSON object.
     QJson::Serializer serializer;
     QByteArray json = serializer.serialize(postData);
-
-    qDebug() << QString(json);
 
     // Prepare the request.
     QNetworkRequest request;
@@ -351,8 +347,6 @@ void Grooveshark::getStreamKeyFinished() {
         // Read data.
         QByteArray responseBytes = this->getStreamKeyReply->readAll();
 
-        qDebug() << QString(responseBytes);
-
         // Parse the data to a map.
         QVariantMap responseData = QJson::Parser().parse(responseBytes, &parseOk).toMap();
 
@@ -365,14 +359,14 @@ void Grooveshark::getStreamKeyFinished() {
             this->streamIp = songData["ip"].toString();
             this->streamKey = songData["streamKey"].toString();
 
-            qDebug() << "Stream from server" << this->streamIp << "using key" << this->streamKey;
+            qDebug() << "[getStreamKeyFinished]" << "Stream from server" << this->streamIp << "using key" << this->streamKey;
         } else {
-            qDebug() << "getStreamKeyFinished() failed: !parseOk";
-            qDebug() << "responseBytes as string:" << QString(responseBytes);
+            qDebug() << "[getStreamKeyFinished]" << "failed: !parseOk";
+            qDebug() << "[getStreamKeyFinished]" << "responseBytes as string:" << QString(responseBytes);
         }
     } else {
-        qDebug() << "getStreamKeyFinished() failed: reply has errors.";
-        qDebug() << "errorString():" << this->getStreamKeyReply->errorString();
+        qDebug() << "[getStreamKeyFinished]" << "failed: reply has errors.";
+        qDebug() << "[getStreamKeyFinished]" << "errorString():" << this->getStreamKeyReply->errorString();
     }
 }
 
@@ -408,8 +402,8 @@ void Grooveshark::getStreamDataFinished() {
         this->streamData = this->getStreamDataReply->readAll();
     } else {
         // Errors found.
-        qDebug() << "getStreamDataFinished() failed: reply has errors.";
-        qDebug() << "errorString():" << this->getStreamDataReply->errorString();
+        qDebug() << "[getStreamDataFinished]" << "failed: reply has errors.";
+        qDebug() << "[getStreamDataFinished]" << this->getStreamDataReply->errorString();
     }
 }
 

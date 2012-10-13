@@ -80,6 +80,11 @@ void MainWindow::stateChanged(GSState state, void *extra)
     ui->status->setText(Grooveshark::getStateString(state));
 
     switch (state) {
+        case gsCreatingSession:
+        case gsGettingCommToken:
+            this->blockUi();
+            break;
+
         case gsSearching:
             this->clearResults();
             this->blockUi();
@@ -98,6 +103,9 @@ void MainWindow::stateChanged(GSState state, void *extra)
             this->showDownload(static_cast<SongInfo*>(extra));
             this->unblockUi();
             break;
+
+        case gsReady:
+            this->unblockUi();
     }
 }
 
