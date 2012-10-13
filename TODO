@@ -1,0 +1,21 @@
+TO DO
+-----
+
+- Error support:
+
+a) I need to do something related to errors in the communication between the server and the client. For example, if I can't get a PHPSESSID right now, I should keep trying or present the user a nice error. For now I believe it tries twice, since in Germany is a little bit complicated to get it to work.
+
+b) Consider the case when the token expires.
+
+- Direct playback support:
+
+So you don't have to download the song to play it ;)
+
+- Improve the UI:
+
+Meh. Maybe some better download management, better general UI, who knows?
+
+- Auto-update password
+
+This is complicated. To extract the password from a JS file is easy, but not from the flash. I saw some scripts that do this anyway.
+

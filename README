@@ -13,16 +13,6 @@ Requirements
 - Qt4
 - Qjson	(http://qjson.sourceforge.net/)
 
-TO DO
------
-
-- Add error control on all steps (authentication, search, download, etc) using signals.
-- Play songs without downloading them.
-- Improve the UI.
-- Consider token expire time.
-- Maybe auto-update GS password (it's somewhere in their JS files), but the
-  flash pass might be a problem.
-
 Disclaimer
 ----------
 
@@ -34,6 +24,7 @@ so this code can be obsolete at any time without any kind of warning. Of course,
 I'll try to keep this as much updated as I can, and I hope some people can help
 with this project.
 
-So, please, feel free to fork this project! :)
+Finally, I have nothing to do with Grooveshark's website/developers. This is an
+independent opensource project. So, please, feel free to fork and help! :)
 
 -- Ricardo
