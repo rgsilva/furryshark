@@ -46,7 +46,7 @@ QString Util::getTokenFor(QString method, Request::Client client) {
     QString token = method + ":" + global->commToken + ":" + password + ":" + random;
 
     // SHA1 it.
-    token = QCryptographicHash::hash(token.toAscii(), QCryptographicHash::Sha1).toHex();
+    token = QCryptographicHash::hash(token.toStdString().c_str(), QCryptographicHash::Sha1).toHex();
 
     // token = random + SHA1-token.
     token = (random + token);

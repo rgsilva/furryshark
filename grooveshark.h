@@ -6,6 +6,7 @@
 #include <QtNetwork/QNetworkRequest>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkCookieJar>
+#include <QtNetwork/QNetworkCookie>
 #include <QList>
 #include "songinfo.h"
 

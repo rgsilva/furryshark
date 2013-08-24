@@ -13,11 +13,11 @@ Global::Global() {
     this->session = QString("");
     this->uuid = QUuid::createUuid();
 
-    this->htmlsharkPassword = "greenPlants";
-    this->htmlsharkVersion = "20120830";
+    this->htmlsharkPassword = "nuggetsOfBaller";
+    this->htmlsharkVersion = "20130520";
 
-    this->jsqueuePassword = "fartCatAttack";
-    this->jsqueueVersion = "20120830";
+    this->jsqueuePassword = "chickenFingers";
+    this->jsqueueVersion = "20130520";
 
     qDebug() << "-- Global startup --";
     qDebug() << "uuid:" << this->uuid.toString();

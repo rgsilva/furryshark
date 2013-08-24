@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui network declarative
 
 TARGET = Furryshark
 TEMPLATE = app
@@ -23,7 +23,5 @@ HEADERS  += mainwindow.h \
     global.h \
     util.h \
     songinfo.h
-
-LIBS += -lqjson
 
 FORMS    += mainwindow.ui

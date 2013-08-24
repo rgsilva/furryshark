@@ -10,8 +10,8 @@ cross-platform desktop application for it.
 Requirements
 ------------
 
-- Qt4
-- Qjson	(http://qjson.sourceforge.net/)
+- Qt 5
+- OpenSSL libraries (on Windows mostly)
 
 Disclaimer
 ----------
